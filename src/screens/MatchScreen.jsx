@@ -1,334 +1,304 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import TopBar from "../components/TopBar";
 
-function randomItem(list) {
-  return list[Math.floor(Math.random() * list.length)];
+const POSITION_ORDER = [
+  "GK",
+  "LB",
+  "CB",
+  "CB",
+  "SB",
+  "CM",
+  "CM",
+  "CAM",
+  "LW",
+  "ST",
+  "RW",
+];
+
+const DEFAULT_BENCH = [
+  "Remzi",
+  "Efe",
+  "Hakan",
+  "Burak",
+  "Kaan",
+  "Selim",
+  "Musa",
+];
+
+const ABILITIES = [
+  { icon: "⚔️", name: "Bire Bir Golcü" },
+  { icon: "🎯", name: "Bitirici" },
+  { icon: "🧱", name: "Güçlü Defans" },
+  { icon: "🎩", name: "Oyun Kurucu" },
+  { icon: "🧤", name: "Refleks Canavarı" },
+  { icon: "🥅", name: "Penaltı Ustası" },
+];
+
+function randomBetween(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function getUniqueMinutes(count, min, max) {
-  const set = new Set();
-  while (set.size < count) {
-    set.add(Math.floor(Math.random() * (max - min + 1)) + min);
-  }
-  return [...set].sort((a, b) => a - b);
+function randomItem(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function generateScore(homeStrength, awayStrength) {
-  const diff = homeStrength - awayStrength;
+function buildPlayer(name, position) {
+  const overall = randomBetween(66, 86);
+  const stamina = randomBetween(55, 100);
 
-  if (diff >= 8) {
-    return {
-      home: 2 + Math.floor(Math.random() * 3),
-      away: Math.floor(Math.random() * 2),
-    };
-  }
-
-  if (diff >= 3) {
-    return {
-      home: 1 + Math.floor(Math.random() * 3),
-      away: Math.floor(Math.random() * 2),
-    };
-  }
-
-  if (diff <= -8) {
-    return {
-      home: Math.floor(Math.random() * 2),
-      away: 2 + Math.floor(Math.random() * 3),
-    };
-  }
-
-  if (diff <= -3) {
-    return {
-      home: Math.floor(Math.random() * 2),
-      away: 1 + Math.floor(Math.random() * 3),
-    };
+  let abilities = [];
+  if (overall >= 80) {
+    abilities = [
+      randomItem(ABILITIES),
+      randomItem(ABILITIES.filter((a) => a.icon !== abilities[0]?.icon)),
+    ];
+  } else if (overall >= 75) {
+    abilities = [randomItem(ABILITIES)];
   }
 
   return {
-    home: Math.floor(Math.random() * 3),
-    away: Math.floor(Math.random() * 3),
+    id: `${name}-${position}-${Math.random().toString(36).slice(2, 8)}`,
+    name,
+    position,
+    overall,
+    stamina,
+    yellowCard: false,
+    injured: false,
+    abilities,
   };
 }
 
-function generateHomeGoalText(scorer, assist) {
-  const options = [
-    `${assist} harika bir orta açtı, ${scorer} boşta kalan topa vurdu ve GOOOOOLLLL!`,
-    `${scorer} ceza sahası dışından sert vurdu... ve top ağlarda! GOOOOOLLLL!`,
-    `${scorer} kaleciyle karşı karşıya kaldı, sakin vurdu ve GOOOOOLLLL!`,
-    `${assist} ara pasını verdi, ${scorer} tek vuruşla ağları buldu! GOOOOOLLLL!`,
-  ];
+function buildSquad(data) {
+  const starters = (data?.starters || []).slice(0, 11);
+  const benchNames = (data?.bench || DEFAULT_BENCH).slice(0, 7);
 
-  return randomItem(options);
-}
+  const lineup = POSITION_ORDER.map((pos, index) => {
+    const name = starters[index] || `Oyuncu ${index + 1}`;
+    return buildPlayer(name, pos);
+  });
 
-function generateAwayGoalText(opponent) {
-  const options = [
-    `${opponent} hızlı çıktı, savunma geç kaldı ve top ağlarla buluştu.`,
-    `${opponent} ceza sahasında boş kaldı, sert vurdu ve gol geldi.`,
-    `${opponent} uzaktan denedi, top filelere gitti.`,
-  ];
-
-  return randomItem(options);
-}
-
-function generateChanceText(player, opponent) {
-  const options = [
-    `${player} uzaktan şansını denedi ama top auta gitti.`,
-    `${player} rakibini geçti, şutunda kaleci başarılı.`,
-    `${opponent} tehlikeli geldi ama savunma son anda araya girdi.`,
-    `${player} ceza sahasında vurdu, top direkten döndü!`,
-  ];
-
-  return randomItem(options);
-}
-
-function generateYellowText(player) {
-  const options = [
-    `${player} rakibini formasından çekti ve sarı kart gördü.`,
-    `${player} geç kaldı, hakem sarı kartını çıkardı.`,
-    `${player} sert müdahalesi sonrası sarı kart gördü.`,
-  ];
-
-  return randomItem(options);
-}
-
-function buildMatchEvents(data) {
-  const players = data.starters || [];
-  const opponent = data.nextMatch.opponent;
-  const score = generateScore(
-    data.club.strength || 60,
-    data.nextMatch.opponentStrength || 60
+  const benchPositions = ["GK", "CB", "CM", "CM", "LW", "ST", "SB"];
+  const bench = benchNames.map((name, index) =>
+    buildPlayer(name, benchPositions[index] || "CM")
   );
 
-  const events = [];
-
-  const homeGoalMinutes = getUniqueMinutes(score.home, 8, 88);
-  const awayGoalMinutes = getUniqueMinutes(score.away, 10, 87);
-  const chanceMinutes = getUniqueMinutes(5, 6, 84);
-  const cardMinutes = getUniqueMinutes(2, 15, 80);
-
-  homeGoalMinutes.forEach((minute) => {
-    const scorer = randomItem(players);
-    const assist = randomItem(players.filter((p) => p !== scorer) || players);
-
-    events.push({
-      minute,
-      type: "goal-home",
-      title: `${minute}' GOL - ${scorer}`,
-      text: generateHomeGoalText(scorer, assist),
-      scorer,
-    });
-  });
-
-  awayGoalMinutes.forEach((minute) => {
-    events.push({
-      minute,
-      type: "goal-away",
-      title: `${minute}' GOL - ${opponent}`,
-      text: generateAwayGoalText(opponent),
-      scorer: opponent,
-    });
-  });
-
-  chanceMinutes.forEach((minute) => {
-    const player = randomItem(players);
-    events.push({
-      minute,
-      type: "chance",
-      title: `${minute}' TEHLİKE`,
-      text: generateChanceText(player, opponent),
-    });
-  });
-
-  cardMinutes.forEach((minute) => {
-    const player = randomItem(players);
-    events.push({
-      minute,
-      type: "yellow",
-      title: `${minute}' SARI KART - ${player}`,
-      text: generateYellowText(player),
-      player,
-    });
-  });
-
-  events.push({
-    minute: 45,
-    type: "half",
-    title: "45' İLK YARI",
-    text: "İlk yarı sona erdi.",
-  });
-
-  events.sort((a, b) => a.minute - b.minute);
-
-  return { events, finalScore: score };
+  return { lineup, bench };
 }
 
-function NotificationBox({ notification }) {
-  if (!notification) return null;
-
-  const styleMap = {
-    "goal-home": "bg-emerald-500 text-white",
-    "goal-away": "bg-rose-500 text-white",
-    yellow: "bg-yellow-400 text-slate-950",
-    chance: "bg-sky-500 text-white",
-    half: "bg-slate-700 text-white",
-    final: "bg-violet-500 text-white",
-  };
-
-  return (
-    <div
-      className={`animate-pulse rounded-3xl px-5 py-4 text-center text-lg font-black shadow-lg ${
-        styleMap[notification.type] || "bg-slate-700 text-white"
-      }`}
-    >
-      {notification.title}
-    </div>
-  );
+function badgeClass(type) {
+  if (type === "goal") return "bg-emerald-500 text-white animate-pulse";
+  if (type === "yellow") return "bg-yellow-400 text-slate-950";
+  if (type === "injury") return "bg-rose-500 text-white";
+  if (type === "sub") return "bg-sky-500 text-white";
+  return "bg-slate-700 text-white";
 }
 
 export default function MatchScreen({ data, onBackHome }) {
-  const [started, setStarted] = useState(false);
-  const [running, setRunning] = useState(false);
-  const [speed, setSpeed] = useState(1);
+  const initialSquad = useMemo(() => buildSquad(data), [data]);
+
+  const [lineup, setLineup] = useState(initialSquad.lineup);
+  const [bench, setBench] = useState(initialSquad.bench);
+
   const [minute, setMinute] = useState(0);
-  const [homeGoals, setHomeGoals] = useState(0);
-  const [awayGoals, setAwayGoals] = useState(0);
-  const [commentary, setCommentary] = useState([]);
-  const [notification, setNotification] = useState(null);
+  const [score, setScore] = useState({ home: 0, away: 0 });
+  const [running, setRunning] = useState(false);
+  const [started, setStarted] = useState(false);
   const [finished, setFinished] = useState(false);
-  const [summary, setSummary] = useState("");
-  const [manOfTheMatch, setManOfTheMatch] = useState("-");
+  const [speed, setSpeed] = useState(1);
+  const [tempo, setTempo] = useState("Dengeli");
+  const [events, setEvents] = useState([]);
+  const [selectedOutId, setSelectedOutId] = useState("");
+  const [selectedInId, setSelectedInId] = useState("");
+  const [motm, setMotm] = useState("-");
+  const intervalRef = useRef(null);
 
-  const minuteRef = useRef(0);
-  const homeGoalsRef = useRef(0);
-  const awayGoalsRef = useRef(0);
-  const eventIndexRef = useRef(0);
-  const eventsRef = useRef([]);
-  const finalScoreRef = useRef({ home: 0, away: 0 });
-  const notificationTimeoutRef = useRef(null);
-
-  const starters = useMemo(() => data.starters || [], [data.starters]);
-
-  const clearNotificationLater = () => {
-    if (notificationTimeoutRef.current) {
-      clearTimeout(notificationTimeoutRef.current);
-    }
-
-    notificationTimeoutRef.current = setTimeout(() => {
-      setNotification(null);
-    }, 1300);
-  };
-
-  const resetLiveMatch = () => {
-    const plan = buildMatchEvents(data);
-
-    eventsRef.current = plan.events;
-    finalScoreRef.current = plan.finalScore;
-    eventIndexRef.current = 0;
-    minuteRef.current = 0;
-    homeGoalsRef.current = 0;
-    awayGoalsRef.current = 0;
-
-    setStarted(true);
-    setRunning(true);
-    setFinished(false);
+  function resetMatch() {
+    const squad = buildSquad(data);
+    setLineup(squad.lineup);
+    setBench(squad.bench);
     setMinute(0);
-    setHomeGoals(0);
-    setAwayGoals(0);
-    setSummary("");
-    setNotification({
-      type: "chance",
-      title: "Maç Başladı",
-    });
-    setCommentary(["0' Hakem ilk düdüğü çaldı, maç başladı."]);
-    setManOfTheMatch("-");
-    clearNotificationLater();
-  };
-
-  const finishMatch = () => {
+    setScore({ home: 0, away: 0 });
     setRunning(false);
-    setFinished(true);
+    setStarted(false);
+    setFinished(false);
+    setEvents([]);
+    setSelectedOutId("");
+    setSelectedInId("");
+    setMotm("-");
+  }
 
-    const finalHome = homeGoalsRef.current;
-    const finalAway = awayGoalsRef.current;
+  function autoBestLineup() {
+    const allPlayers = [...lineup, ...bench].map((p) => ({
+      ...p,
+      sortScore: p.overall + p.stamina * 0.35,
+    }));
 
-    let finalSummary = "";
-    if (finalHome > finalAway) {
-      finalSummary = `${data.club.name} maçı kazandı ve moral depoladı.`;
-    } else if (finalHome < finalAway) {
-      finalSummary = `${data.club.name} sahadan mağlubiyetle ayrıldı.`;
-    } else {
-      finalSummary = `Karşılaşma beraberlikle sonuçlandı.`;
-    }
+    const newLineup = [];
+    const usedIds = new Set();
 
-    const motm =
-      starters[Math.floor(Math.random() * starters.length)] || "Leo Vale";
+    POSITION_ORDER.forEach((pos) => {
+      const best = allPlayers
+        .filter((p) => !usedIds.has(p.id))
+        .sort((a, b) => {
+          const posBonusA = a.position === pos ? 8 : 0;
+          const posBonusB = b.position === pos ? 8 : 0;
+          return b.sortScore + posBonusB - (a.sortScore + posBonusA);
+        })[0];
 
-    setManOfTheMatch(motm);
-    setSummary(finalSummary);
-    setNotification({
-      type: "final",
-      title: "MAÇ BİTTİ",
+      if (best) {
+        usedIds.add(best.id);
+        newLineup.push({ ...best });
+      }
     });
-    setCommentary((prev) => [...prev, "90+' Son düdük geldi, maç sona erdi."]);
-    clearNotificationLater();
-  };
+
+    const newBench = allPlayers
+      .filter((p) => !usedIds.has(p.id))
+      .slice(0, 7)
+      .map((p) => ({ ...p }));
+
+    setLineup(newLineup);
+    setBench(newBench);
+
+    setEvents((prev) => [
+      {
+        id: crypto.randomUUID(),
+        minute,
+        type: "sub",
+        title: "OTOMATİK KADRO",
+        text: "En iyi kadro kondisyon ve güce göre kuruldu.",
+      },
+      ...prev,
+    ]);
+  }
+
+  function addEvent(type, title, text) {
+    setEvents((prev) => [
+      {
+        id: crypto.randomUUID(),
+        minute: minute + 1,
+        type,
+        title,
+        text,
+      },
+      ...prev,
+    ]);
+  }
+
+  function doSubstitution() {
+    if (!selectedOutId || !selectedInId) return;
+
+    const outPlayer = lineup.find((p) => p.id === selectedOutId);
+    const inPlayer = bench.find((p) => p.id === selectedInId);
+
+    if (!outPlayer || !inPlayer) return;
+
+    const newLineup = lineup.map((p) =>
+      p.id === outPlayer.id ? { ...inPlayer, position: outPlayer.position } : p
+    );
+    const newBench = bench.map((p) =>
+      p.id === inPlayer.id ? { ...outPlayer, position: inPlayer.position } : p
+    );
+
+    setLineup(newLineup);
+    setBench(newBench);
+    addEvent(
+      "sub",
+      `🔄 ${outPlayer.name} çıktı`,
+      `${outPlayer.name} çıktı, ${inPlayer.name} girdi.`
+    );
+
+    setSelectedOutId("");
+    setSelectedInId("");
+  }
 
   useEffect(() => {
-    if (!started || !running || finished) return;
+    if (!running || finished) return;
 
     const delay = 1000 / speed;
 
-    const interval = setInterval(() => {
-      if (minuteRef.current >= 90) {
-        finishMatch();
-        return;
-      }
+    intervalRef.current = setInterval(() => {
+      setMinute((prevMinute) => {
+        const nextMinute = prevMinute + 1;
 
-      const nextMinute = minuteRef.current + 1;
-      minuteRef.current = nextMinute;
-      setMinute(nextMinute);
+        setLineup((prevLineup) =>
+          prevLineup.map((p) => ({
+            ...p,
+            stamina: Math.max(0, p.stamina - randomBetween(0, 2)),
+          }))
+        );
 
-      while (
-        eventIndexRef.current < eventsRef.current.length &&
-        eventsRef.current[eventIndexRef.current].minute === nextMinute
-      ) {
-        const event = eventsRef.current[eventIndexRef.current];
-        eventIndexRef.current += 1;
+        if (nextMinute <= 90) {
+          const attackBoost = tempo === "Hücum" ? 0.07 : tempo === "Defans" ? -0.04 : 0;
+          const randomRoll = Math.random();
 
-        if (event.type === "goal-home") {
-          homeGoalsRef.current += 1;
-          setHomeGoals(homeGoalsRef.current);
+          if (randomRoll < 0.18 + attackBoost) {
+            const attacker = randomItem(lineup);
+            const isHomeGoal = Math.random() < 0.62 + attackBoost;
+
+            if (isHomeGoal) {
+              setScore((s) => ({ ...s, home: s.home + 1 }));
+              addEvent(
+                "goal",
+                `⚽ ${attacker.name} GOL`,
+                `${attacker.name} vurdu ve GOOOOOLLLL!`
+              );
+            } else {
+              setScore((s) => ({ ...s, away: s.away + 1 }));
+              addEvent(
+                "goal",
+                `⚽ ${data.nextMatch.opponent} GOL`,
+                `${data.nextMatch.opponent} kontra ataktan golü buldu.`
+              );
+            }
+          } else if (randomRoll < 0.26) {
+            const booked = randomItem(lineup);
+            setLineup((prevLineup) =>
+              prevLineup.map((p) =>
+                p.id === booked.id ? { ...p, yellowCard: true } : p
+              )
+            );
+            addEvent(
+              "yellow",
+              `🟨 ${booked.name} sarı kart`,
+              `${booked.name} sert müdahale sonrası sarı kart gördü.`
+            );
+          } else if (randomRoll < 0.30) {
+            const injured = randomItem(lineup);
+            setLineup((prevLineup) =>
+              prevLineup.map((p) =>
+                p.id === injured.id ? { ...p, injured: true, stamina: 0 } : p
+              )
+            );
+            addEvent(
+              "injury",
+              `🩹 ${injured.name} sakatlandı`,
+              `${injured.name} yerde kaldı. Değişiklik gerekebilir.`
+            );
+          } else if (randomRoll < 0.42) {
+            const chancePlayer = randomItem(lineup);
+            addEvent(
+              "normal",
+              `🎯 ${chancePlayer.name} denedi`,
+              `${chancePlayer.name} tehlikeli bir pozisyon yakaladı ama sonuç çıkmadı.`
+            );
+          }
         }
 
-        if (event.type === "goal-away") {
-          awayGoalsRef.current += 1;
-          setAwayGoals(awayGoalsRef.current);
+        if (nextMinute >= 90) {
+          setRunning(false);
+          setFinished(true);
+          const best = [...lineup].sort((a, b) => b.overall - a.overall)[0];
+          setMotm(best?.name || "-");
+          addEvent("normal", "🏁 MAÇ BİTTİ", "Hakem son düdüğü çaldı.");
+          return 90;
         }
 
-        setCommentary((prev) => [...prev, `${event.minute}' ${event.text}`]);
-        setNotification({
-          type: event.type,
-          title: event.title,
-        });
-        clearNotificationLater();
-      }
-
-      if (nextMinute >= 90) {
-        finishMatch();
-      }
+        return nextMinute;
+      });
     }, delay);
 
-    return () => clearInterval(interval);
-  }, [started, running, speed, finished, data.club.name, starters]);
-
-  useEffect(() => {
-    return () => {
-      if (notificationTimeoutRef.current) {
-        clearTimeout(notificationTimeoutRef.current);
-      }
-    };
-  }, []);
+    return () => clearInterval(intervalRef.current);
+  }, [running, finished, speed, lineup, tempo, data.nextMatch.opponent, minute]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-sky-950 text-white">
@@ -350,185 +320,271 @@ export default function MatchScreen({ data, onBackHome }) {
             </h1>
           </div>
 
-          <button
-            onClick={onBackHome}
-            className="rounded-2xl bg-white px-5 py-3 font-bold text-slate-900"
-          >
-            Ana Ekrana Dön
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={resetMatch}
+              className="rounded-2xl bg-slate-700 px-5 py-3 font-bold text-white"
+            >
+              Maçı Sıfırla
+            </button>
+            <button
+              onClick={onBackHome}
+              className="rounded-2xl bg-white px-5 py-3 font-bold text-slate-900"
+            >
+              Ana Ekrana Dön
+            </button>
+          </div>
         </div>
 
-        <div className="mb-6 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-          <div className="rounded-3xl bg-slate-900/90 p-6 shadow-xl">
-            <div className="mb-5 grid items-center gap-4 md:grid-cols-[1fr_auto_1fr]">
-              <div className="text-center">
-                <p className="text-sm text-slate-400">Ev Sahibi</p>
-                <h2 className="text-2xl font-black">{data.club.name}</h2>
+        <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+          <div className="space-y-6">
+            <div className="rounded-3xl bg-slate-900/90 p-6 shadow-xl">
+              <div className="mb-5 grid items-center gap-4 md:grid-cols-[1fr_auto_1fr]">
+                <div className="text-center">
+                  <p className="text-sm text-slate-400">Ev Sahibi</p>
+                  <h2 className="text-2xl font-black">{data.club.name}</h2>
+                </div>
+
+                <div className="rounded-3xl bg-slate-800 px-8 py-5 text-center">
+                  <p className="text-sm uppercase text-slate-400">Dakika</p>
+                  <p className="text-4xl font-black">{minute}'</p>
+                  <p className="mt-2 text-5xl font-black">
+                    {score.home} - {score.away}
+                  </p>
+                </div>
+
+                <div className="text-center">
+                  <p className="text-sm text-slate-400">Rakip</p>
+                  <h2 className="text-2xl font-black">
+                    {data.nextMatch.opponent}
+                  </h2>
+                </div>
               </div>
 
-              <div className="rounded-3xl bg-slate-800 px-8 py-5 text-center">
-                <p className="text-sm uppercase text-slate-400">Dakika</p>
-                <p className="text-4xl font-black">{minute}'</p>
-                <p className="mt-2 text-5xl font-black">
-                  {homeGoals} - {awayGoals}
-                </p>
-              </div>
-
-              <div className="text-center">
-                <p className="text-sm text-slate-400">Rakip</p>
-                <h2 className="text-2xl font-black">
-                  {data.nextMatch.opponent}
-                </h2>
-              </div>
-            </div>
-
-            <div className="mb-5">
-              <NotificationBox notification={notification} />
-            </div>
-
-            <div className="mb-5 flex flex-wrap gap-3">
-              {!started && (
-                <button
-                  onClick={resetLiveMatch}
-                  className="rounded-3xl bg-emerald-400 px-6 py-4 text-lg font-black text-slate-950 shadow-lg"
-                >
-                  Maçı Başlat
-                </button>
-              )}
-
-              {started && !finished && (
-                <>
+              <div className="mb-5 flex flex-wrap gap-3">
+                {!started && (
                   <button
-                    onClick={() => setRunning(false)}
-                    className="rounded-3xl bg-rose-500 px-5 py-3 font-bold text-white"
+                    onClick={() => {
+                      setStarted(true);
+                      setRunning(true);
+                    }}
+                    className="rounded-3xl bg-emerald-400 px-6 py-4 text-lg font-black text-slate-950"
                   >
-                    Durdur
+                    Maçı Başlat
                   </button>
-
-                  <button
-                    onClick={() => setRunning(true)}
-                    className="rounded-3xl bg-emerald-500 px-5 py-3 font-bold text-white"
-                  >
-                    Devam Et
-                  </button>
-                </>
-              )}
-
-              {(started || finished) && (
-                <button
-                  onClick={resetLiveMatch}
-                  className="rounded-3xl bg-slate-700 px-5 py-3 font-bold text-white"
-                >
-                  Yeni Maç
-                </button>
-              )}
-            </div>
-
-            <div className="mb-6 flex flex-wrap gap-3">
-              {[1, 2, 4].map((value) => (
-                <button
-                  key={value}
-                  onClick={() => setSpeed(value)}
-                  className={`rounded-2xl px-4 py-3 font-bold ${
-                    speed === value
-                      ? "bg-yellow-400 text-slate-950"
-                      : "bg-slate-800 text-white"
-                  }`}
-                >
-                  {value}x
-                </button>
-              ))}
-            </div>
-
-            <div className="rounded-3xl bg-white/10 p-5 shadow-lg backdrop-blur">
-              <p className="mb-4 text-sm uppercase tracking-[0.2em] text-slate-300">
-                Maç Anlatımı
-              </p>
-
-              <div className="max-h-[420px] space-y-3 overflow-y-auto pr-2">
-                {commentary.length === 0 ? (
-                  <div className="rounded-2xl bg-slate-800/90 p-4 text-sm text-slate-200">
-                    Maç henüz başlamadı.
-                  </div>
-                ) : (
-                  commentary.map((line, index) => (
-                    <div
-                      key={`${line}-${index}`}
-                      className="rounded-2xl bg-slate-800/90 p-4 text-sm text-slate-100"
-                    >
-                      {line}
-                    </div>
-                  ))
                 )}
+
+                {started && !finished && (
+                  <>
+                    <button
+                      onClick={() => setRunning(true)}
+                      className="rounded-2xl bg-emerald-500 px-5 py-3 font-bold text-white"
+                    >
+                      Devam Et
+                    </button>
+                    <button
+                      onClick={() => setRunning(false)}
+                      className="rounded-2xl bg-rose-500 px-5 py-3 font-bold text-white"
+                    >
+                      Durdur
+                    </button>
+                  </>
+                )}
+
+                {[1, 2, 4].map((value) => (
+                  <button
+                    key={value}
+                    onClick={() => setSpeed(value)}
+                    className={`rounded-2xl px-4 py-3 font-bold ${
+                      speed === value
+                        ? "bg-yellow-400 text-slate-950"
+                        : "bg-slate-800 text-white"
+                    }`}
+                  >
+                    {value}x
+                  </button>
+                ))}
+              </div>
+
+              <div className="mb-5 flex flex-wrap gap-3">
+                {["Defans", "Dengeli", "Hücum"].map((item) => (
+                  <button
+                    key={item}
+                    onClick={() => setTempo(item)}
+                    className={`rounded-2xl px-4 py-3 font-bold ${
+                      tempo === item
+                        ? "bg-sky-400 text-slate-950"
+                        : "bg-slate-800 text-white"
+                    }`}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+
+              {finished && (
+                <div className="mb-5 rounded-3xl bg-slate-800 p-5">
+                  <p className="text-sm uppercase text-slate-400">Maç Sonu</p>
+                  <p className="mt-2 text-xl font-black">Maçın Oyuncusu: {motm}</p>
+                </div>
+              )}
+
+              <div className="rounded-3xl bg-white/10 p-5 backdrop-blur">
+                <p className="mb-4 text-sm uppercase tracking-[0.2em] text-slate-300">
+                  Maç Olayları
+                </p>
+
+                <div className="max-h-[420px] space-y-3 overflow-y-auto pr-2">
+                  {events.length === 0 ? (
+                    <div className="rounded-2xl bg-slate-800/90 p-4 text-sm text-slate-200">
+                      Maç henüz başlamadı.
+                    </div>
+                  ) : (
+                    events.map((event) => (
+                      <div
+                        key={event.id}
+                        className={`rounded-2xl p-4 ${badgeClass(event.type)}`}
+                      >
+                        <p className="font-black">{event.title}</p>
+                        <p className="mt-1 text-sm font-medium">{event.text}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="rounded-3xl bg-slate-900/90 p-5 shadow-xl">
-              <p className="text-sm uppercase tracking-[0.2em] text-slate-400">
-                Maç Bilgisi
-              </p>
-
-              <div className="mt-4 grid gap-3">
-                <div className="rounded-2xl bg-slate-800 p-4">
-                  <p className="text-xs uppercase text-slate-400">Tarih</p>
-                  <p className="mt-1 text-lg font-bold">{data.nextMatch.date}</p>
-                </div>
-
-                <div className="rounded-2xl bg-slate-800 p-4">
-                  <p className="text-xs uppercase text-slate-400">Tür</p>
-                  <p className="mt-1 text-lg font-bold">{data.nextMatch.type}</p>
-                </div>
-
-                <div className="rounded-2xl bg-slate-800 p-4">
-                  <p className="text-xs uppercase text-slate-400">Takım Gücü</p>
-                  <p className="mt-1 text-lg font-bold">
-                    {data.club.strength} / {data.nextMatch.opponentStrength}
-                  </p>
-                </div>
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <p className="text-sm uppercase tracking-[0.2em] text-slate-400">
+                  Maç Öncesi Kadro
+                </p>
+                <button
+                  onClick={autoBestLineup}
+                  className="rounded-2xl bg-emerald-400 px-4 py-3 text-sm font-black text-slate-950"
+                >
+                  En İyi Kadroyu Kur
+                </button>
               </div>
-            </div>
 
-            <div className="rounded-3xl bg-slate-900/90 p-5 shadow-xl">
-              <p className="mb-4 text-sm uppercase tracking-[0.2em] text-slate-400">
-                İlk 11
-              </p>
-
-              <div className="grid gap-3">
-                {(data.starters || []).map((player, index) => (
+              <div className="space-y-3">
+                {lineup.map((player, index) => (
                   <div
-                    key={`${player}-${index}`}
+                    key={player.id}
                     className="rounded-2xl bg-slate-800 p-4"
                   >
-                    <p className="text-xs uppercase text-slate-400">
-                      Oyuncu {index + 1}
-                    </p>
-                    <p className="mt-1 font-bold">{player}</p>
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs uppercase text-slate-400">
+                          {POSITION_ORDER[index]}
+                        </p>
+                        <p className="text-lg font-bold">{player.name}</p>
+                      </div>
+
+                      <div className="text-right">
+                        <p className="text-sm font-bold">{player.overall}</p>
+                        <p className="text-xs text-slate-400">
+                          Kondisyon {player.stamina}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {player.abilities.map((a, idx) => (
+                        <span
+                          key={`${player.id}-${idx}`}
+                          className="rounded-full bg-slate-700 px-2 py-1 text-xs font-bold"
+                          title={a.name}
+                        >
+                          {a.icon}
+                        </span>
+                      ))}
+                      {player.yellowCard && (
+                        <span className="rounded-full bg-yellow-400 px-2 py-1 text-xs font-black text-slate-950">
+                          🟨
+                        </span>
+                      )}
+                      {player.injured && (
+                        <span className="rounded-full bg-rose-500 px-2 py-1 text-xs font-black text-white">
+                          🩹
+                        </span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {finished && (
-              <div className="rounded-3xl bg-slate-900/90 p-5 shadow-xl">
-                <p className="text-sm uppercase tracking-[0.2em] text-slate-400">
-                  Maç Sonu
-                </p>
+            <div className="rounded-3xl bg-slate-900/90 p-5 shadow-xl">
+              <p className="mb-4 text-sm uppercase tracking-[0.2em] text-slate-400">
+                Yedek Kulübesi
+              </p>
 
-                <div className="mt-4 rounded-2xl bg-slate-800 p-4">
-                  <p className="text-xs uppercase text-slate-400">
-                    Maçın Oyuncusu
-                  </p>
-                  <p className="mt-1 text-xl font-black">{manOfTheMatch}</p>
-                </div>
+              <div className="space-y-3">
+                {bench.map((player) => (
+                  <div key={player.id} className="rounded-2xl bg-slate-800 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs uppercase text-slate-400">
+                          {player.position}
+                        </p>
+                        <p className="font-bold">{player.name}</p>
+                      </div>
 
-                <div className="mt-3 rounded-2xl bg-slate-800 p-4">
-                  <p className="text-xs uppercase text-slate-400">Özet</p>
-                  <p className="mt-1 font-semibold">{summary}</p>
-                </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold">{player.overall}</p>
+                        <p className="text-xs text-slate-400">
+                          Kondisyon {player.stamina}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
+
+            <div className="rounded-3xl bg-slate-900/90 p-5 shadow-xl">
+              <p className="mb-4 text-sm uppercase tracking-[0.2em] text-slate-400">
+                Oyuncu Değişikliği
+              </p>
+
+              <div className="space-y-3">
+                <select
+                  value={selectedOutId}
+                  onChange={(e) => setSelectedOutId(e.target.value)}
+                  className="w-full rounded-2xl bg-slate-800 p-4 outline-none"
+                >
+                  <option value="">Çıkacak oyuncuyu seç</option>
+                  {lineup.map((p, index) => (
+                    <option key={p.id} value={p.id}>
+                      {POSITION_ORDER[index]} - {p.name}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={selectedInId}
+                  onChange={(e) => setSelectedInId(e.target.value)}
+                  className="w-full rounded-2xl bg-slate-800 p-4 outline-none"
+                >
+                  <option value="">Girecek oyuncuyu seç</option>
+                  {bench.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.position} - {p.name}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  onClick={doSubstitution}
+                  className="w-full rounded-3xl bg-sky-500 px-5 py-4 font-black text-white"
+                >
+                  Değişikliği Yap
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
