@@ -399,7 +399,7 @@ function formatCountdown(ms) {
 
 export default function App() {
   const [game, setGame] = useState(freshState());
-  const [showIntro, setShowIntro] = useState(true);
+  const [showIntro, setShowIntro] = useState(false);
   const [marketNow, setMarketNow] = useState(Date.now());
   const timerRef = useRef(null);
 
