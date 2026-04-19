@@ -21,11 +21,22 @@ const SPONSORS = [
   { id: "tv", minStars: 3.4, company: "Prime Sports TV", title: "Yayın Anlaşması", amount: 12000 },
 ];
 
-const STORE = [
-  { id: "scarf", name: "Kulüp Atkısı", buy: 10, demand: 4 },
-  { id: "shirt", name: "Kulüp Forması", buy: 22, demand: 2 },
-  { id: "cap", name: "Kulüp Şapkası", buy: 14, demand: 3 },
+const FAN_STORE_ITEMS = [
+  { id: "scarf", name: "Kulüp Atkısı", stockCost: 10, sellPrice: 16, demand: 4 },
+  { id: "shirt", name: "Kulüp Forması", stockCost: 22, sellPrice: 35, demand: 2 },
+  { id: "cap", name: "Kulüp Şapkası", stockCost: 14, sellPrice: 22, demand: 3 },
 ];
+
+const CASH_SHOP = {
+  gems: [
+    { id: "g10", title: "10 Elmas", priceLabel: "$0.99", gems: 10, featured: true },
+    { id: "g50", title: "50 Elmas", priceLabel: "$4.50", gems: 50, featured: false },
+  ],
+  elTurco: [
+    { id: "et1", title: "İlk El Turco Oyuncusu", priceLabel: "$0.99", featured: true },
+    { id: "et2", title: "El Turco Premium Oyuncusu", priceLabel: "$9.00", featured: false },
+  ],
+};
 
 const OPPONENTS = [
   "Sanayi Spor",
@@ -109,6 +120,7 @@ function createRandomPlayer(role, usedNumbers) {
     condition: 100,
     booked: false,
     injured: false,
+    sentOff: false,
     abilities: [],
     xp: { speed: 0, power: 0, stamina: 0, technique: 0 },
   };
@@ -120,7 +132,6 @@ function createRandomPlayer(role, usedNumbers) {
 function createStartingPlayers() {
   const usedNumbers = new Set();
   const roles = ["GK", "LB", "CB", "CB", "SB", "CM", "CM", "CAM", "LW", "RW", "GK", "CB", "DF", "CM", "CAM", "LW", "RW"];
-
   const players = roles.map((role) => createRandomPlayer(role, usedNumbers));
 
   usedNumbers.add(55);
@@ -136,6 +147,7 @@ function createStartingPlayers() {
     condition: 100,
     booked: false,
     injured: false,
+    sentOff: false,
     abilities: [{ icon: "⚔️", name: "Golcü" }],
     xp: { speed: 0, power: 0, stamina: 0, technique: 0 },
   };
@@ -151,7 +163,7 @@ function buildBestXI(players) {
 
   FORMATION.forEach((role) => {
     const pick = [...players]
-      .filter((p) => !used.has(p.number) && !p.injured)
+      .filter((p) => !used.has(p.number) && !p.injured && !p.sentOff)
       .sort((a, b) => {
         const roleBonusA = a.role === role || (role === "CB" && ["CB", "DF"].includes(a.role)) ? 8 : 0;
         const roleBonusB = b.role === role || (role === "CB" && ["CB", "DF"].includes(b.role)) ? 8 : 0;
@@ -164,13 +176,13 @@ function buildBestXI(players) {
     }
   });
 
-  const bench = players.filter((p) => !used.has(p.number) && !p.injured).slice(0, BENCH_SIZE);
+  const bench = players.filter((p) => !used.has(p.number) && !p.injured && !p.sentOff).slice(0, BENCH_SIZE);
   return { lineup, bench };
 }
 
 function calcTeam(lineup, eqIndex, morale) {
   const b = EQUIPMENT[eqIndex].bonus;
-  const avgStat = (key) => Math.round(lineup.reduce((sum, p) => sum + p[key], 0) / lineup.length);
+  const avgStat = (key) => Math.round(lineup.reduce((sum, p) => sum + p[key], 0) / Math.max(lineup.length, 1));
 
   const speed = clamp(avgStat("speed") + b.speed + Math.floor(morale * 0.03), 1, 99);
   const power = clamp(avgStat("power") + b.power + Math.floor(morale * 0.03), 1, 99);
@@ -185,6 +197,59 @@ function calcStars(team) {
   return Math.round(clamp(team.overall / 18, 1, 5) * 10) / 10;
 }
 
+function applyXp(player, gains) {
+  const updated = { ...player, xp: { ...player.xp } };
+  const keys = ["speed", "power", "stamina", "technique"];
+
+  keys.forEach((key) => {
+    const add = gains[key] || 0;
+    if (!add) return;
+    updated.xp[key] += add;
+
+    while (updated.xp[key] >= 1000) {
+      updated.xp[key] -= 1000;
+      updated[key] += 1;
+    }
+  });
+
+  updated.overall = calcOverall(updated);
+  return updated;
+}
+
+function addMatchXp(players, homeGoals, result) {
+  return players.map((p) => {
+    let gains = { speed: 0, power: 0, stamina: 0, technique: 0 };
+
+    if (p.role === "ST") {
+      gains.technique += homeGoals > 0 ? 240 : 70;
+      gains.speed += 90;
+      gains.power += 50;
+      gains.stamina += 70;
+    } else if (["LW", "RW", "CAM"].includes(p.role)) {
+      gains.technique += homeGoals > 0 ? 160 : 60;
+      gains.speed += 80;
+      gains.stamina += 80;
+      gains.power += 25;
+    } else if (["CM"].includes(p.role)) {
+      gains.technique += 80;
+      gains.stamina += 90;
+      gains.power += 35;
+      gains.speed += 40;
+    } else if (["LB", "SB", "CB", "DF"].includes(p.role)) {
+      gains.power += result === "W" ? 110 : 70;
+      gains.stamina += 70;
+      gains.speed += 25;
+      gains.technique += 20;
+    } else if (p.role === "GK") {
+      gains.power += 15;
+      gains.stamina += 35;
+      gains.technique += result !== "L" ? 80 : 40;
+    }
+
+    return applyXp(p, gains);
+  });
+}
+
 function freshState() {
   const players = createStartingPlayers();
   return {
@@ -192,6 +257,7 @@ function freshState() {
     club: "El Turco FC",
     started: false,
     cash: 180,
+    gems: 0,
     fans: 65,
     morale: 58,
     eq: 0,
@@ -220,6 +286,7 @@ function freshState() {
       finished: false,
       resultSummary: null,
       injuriesThisMatch: 0,
+      redsThisMatch: 0,
     },
   };
 }
@@ -233,26 +300,23 @@ function sanitizeSave(raw) {
     cup: { ...base.cup, ...(raw?.cup || {}) },
     live: { ...base.live, ...(raw?.live || {}) },
     players: Array.isArray(raw?.players) && raw.players.length ? raw.players : base.players,
+    gems: typeof raw?.gems === "number" ? raw.gems : 0,
   };
 }
 
-function applyXp(player, gains) {
-  const updated = { ...player, xp: { ...player.xp } };
-  const keys = ["speed", "power", "stamina", "technique"];
+function findByNumber(players, number) {
+  return players.find((p) => p.number === number);
+}
 
-  keys.forEach((key) => {
-    const add = gains[key] || 0;
-    if (!add) return;
-    updated.xp[key] += add;
+function chooseCardTarget(players) {
+  const defenders = players.filter((p) => ["CB", "DF", "LB", "SB"].includes(p.role));
+  const mids = players.filter((p) => ["CM", "CAM"].includes(p.role));
+  const forwards = players.filter((p) => ["ST", "LW", "RW"].includes(p.role));
 
-    while (updated.xp[key] >= 1000) {
-      updated.xp[key] -= 1000;
-      updated[key] += 1;
-    }
-  });
-
-  updated.overall = calcOverall(updated);
-  return updated;
+  const roll = Math.random();
+  if (roll < 0.72 && defenders.length) return randomFrom(defenders);
+  if (roll < 0.92 && mids.length) return randomFrom(mids);
+  return forwards.length ? randomFrom(forwards) : randomFrom(players);
 }
 
 function simulateQuickMatch(state) {
@@ -280,7 +344,7 @@ function simulateQuickMatch(state) {
   }
 
   const result = gf > ga ? "W" : gf === ga ? "D" : "L";
-  const prize = result === "W" ? 60 : result === "D" ? 25 : 8;
+  const prize = result === "W" ? 70 : result === "D" ? 25 : 8;
   const moraleShift = result === "W" ? 3 : result === "D" ? 0 : -2;
   const fanShift = result === "W" ? 8 : result === "D" ? 2 : -3;
 
@@ -300,30 +364,6 @@ function simulateQuickMatch(state) {
     bonus = 350;
   }
 
-  const scorerPool = lineup.filter((p) => ["ST", "LW", "RW", "CAM"].includes(p.role));
-  let updatedPlayers = [...state.players];
-
-  if (gf > 0 && scorerPool.length) {
-    const scorer = scorerPool.sort((a, b) => b.overall - a.overall)[0];
-    updatedPlayers = updatedPlayers.map((p) =>
-      p.number === scorer.number
-        ? applyXp(p, {
-            technique: 220 * gf,
-            speed: 70,
-            power: 40,
-            stamina: 50,
-          })
-        : p
-    );
-  }
-
-  updatedPlayers = updatedPlayers.map((p) => ({
-    ...p,
-    condition: clamp(p.condition - rand(3, 8), 60, 100),
-    booked: false,
-    injured: false,
-  }));
-
   const lines = [
     `${state.club}, ${opponent} karşısında sahaya çıktı.`,
     `Takım gücü ${team.overall}, rakip gücü ${oppOverall}.`,
@@ -332,6 +372,18 @@ function simulateQuickMatch(state) {
   ];
 
   if (bonus) lines.push(`Başlangıç kupası tamamlandı. Ek ödül: ${money(bonus)}.`);
+
+  const updatedPlayers = addMatchXp(
+    state.players.map((p) => ({
+      ...p,
+      condition: clamp(p.condition - rand(3, 8), 60, 100),
+      booked: false,
+      injured: false,
+      sentOff: false,
+    })),
+    gf,
+    result
+  );
 
   return {
     ...state,
@@ -367,22 +419,8 @@ function createLivePackage(state) {
     finished: false,
     resultSummary: null,
     injuriesThisMatch: 0,
+    redsThisMatch: 0,
   };
-}
-
-function findByNumber(players, number) {
-  return players.find((p) => p.number === number);
-}
-
-function chooseCardTarget(players) {
-  const defenders = players.filter((p) => ["CB", "DF", "LB", "SB"].includes(p.role));
-  const mids = players.filter((p) => ["CM", "CAM"].includes(p.role));
-  const forwards = players.filter((p) => ["ST", "LW", "RW"].includes(p.role));
-
-  const roll = Math.random();
-  if (roll < 0.7 && defenders.length) return randomFrom(defenders);
-  if (roll < 0.9 && mids.length) return randomFrom(mids);
-  return randomFrom(forwards.length ? forwards : players);
 }
 
 export default function App() {
@@ -409,7 +447,6 @@ export default function App() {
   const stars = useMemo(() => calcStars(team), [team]);
   const currentEq = EQUIPMENT[game.eq];
   const nextEq = EQUIPMENT[game.eq + 1] || null;
-
   const sponsor = SPONSORS.find((s) => s.id === game.pendingSponsor) || null;
 
   useEffect(() => {
@@ -431,6 +468,7 @@ export default function App() {
         if (!g.live.running || g.live.finished) return g;
 
         const nextMinute = g.live.minute + 1;
+
         let next = {
           ...g,
           players: g.players.map((p) => {
@@ -448,6 +486,7 @@ export default function App() {
         const homeGoalChance = 0.012 + attackBoost;
         const awayGoalChance = 0.010 + (next.live.tempo === "Hücum" ? 0.003 : 0);
         const yellowChance = 0.016;
+        const redChance = next.live.redsThisMatch < 1 ? 0.002 : 0;
         const injuryChance = next.live.injuriesThisMatch < 1 ? 0.004 : 0;
         const infoChance = 0.05;
 
@@ -507,7 +546,33 @@ export default function App() {
               ].slice(0, 8),
             };
           }
-        } else if (roll < homeGoalChance + awayGoalChance + yellowChance + injuryChance) {
+        } else if (roll < homeGoalChance + awayGoalChance + yellowChance + redChance) {
+          const target = chooseCardTarget(lineupPlayers);
+          if (target) {
+            next.players = next.players.map((p) =>
+              p.number === target.number ? { ...p, booked: false, sentOff: true, condition: 0 } : p
+            );
+
+            const lineupIds = next.live.lineupIds.filter((id) => id !== target.number);
+            const benchIds = next.live.benchIds;
+
+            next.live = {
+              ...next.live,
+              lineupIds,
+              benchIds,
+              redsThisMatch: next.live.redsThisMatch + 1,
+              events: [
+                {
+                  minute: nextMinute,
+                  type: "red",
+                  title: `${target.name} kırmızı kart`,
+                  text: `${target.role} oyuncusu oyun dışında kaldı.`,
+                },
+                ...next.live.events,
+              ].slice(0, 8),
+            };
+          }
+        } else if (roll < homeGoalChance + awayGoalChance + yellowChance + redChance + injuryChance) {
           const targetPool = lineupPlayers.filter((p) => p.role !== "GK");
           const injured = targetPool.length ? randomFrom(targetPool) : null;
 
@@ -558,7 +623,7 @@ export default function App() {
               events: events.slice(0, 8),
             };
           }
-        } else if (roll < homeGoalChance + awayGoalChance + yellowChance + injuryChance + infoChance) {
+        } else if (roll < homeGoalChance + awayGoalChance + yellowChance + redChance + injuryChance + infoChance) {
           const infoTexts = [
             "Orta saha savaşı çok sert geçiyor.",
             "Maç dengede, iki takım da net pozisyon bulmakta zorlanıyor.",
@@ -600,6 +665,11 @@ export default function App() {
 
           next = {
             ...next,
+            players: addMatchXp(
+              next.players.map((p) => ({ ...p, booked: false, sentOff: false })),
+              home,
+              result
+            ),
             cash: next.cash + prize + bonus,
             morale: clamp(next.morale + moraleShift, 35, 95),
             fans: Math.max(30, next.fans + fanShift),
@@ -726,29 +796,29 @@ export default function App() {
     }));
   };
 
-  const buyStoreItem = (itemId) => {
-    const item = STORE.find((s) => s.id === itemId);
-    if (!item || game.cash < item.buy) return;
+  const buyFanStoreStock = (itemId) => {
+    const item = FAN_STORE_ITEMS.find((s) => s.id === itemId);
+    if (!item || game.cash < item.stockCost) return;
 
     setGame((g) => ({
       ...g,
-      cash: g.cash - item.buy,
+      cash: g.cash - item.stockCost,
       stock: { ...g.stock, [itemId]: g.stock[itemId] + 1 },
     }));
   };
 
-  const sellStoreDay = () => {
+  const collectFanStoreRevenue = () => {
     let sold = 0;
     let income = 0;
     const newStock = { ...game.stock };
 
-    STORE.forEach((item) => {
+    FAN_STORE_ITEMS.forEach((item) => {
       const have = newStock[item.id];
       if (!have) return;
       const qty = Math.min(have, rand(0, item.demand));
       newStock[item.id] -= qty;
       sold += qty;
-      income += qty * (item.buy + 6);
+      income += qty * item.sellPrice;
     });
 
     setGame((g) => ({
@@ -757,7 +827,7 @@ export default function App() {
       cash: g.cash + income,
       fans: g.fans + Math.min(3, sold),
       storeRevenue: g.storeRevenue + income,
-      log: [sold ? `Store ${sold} ürün sattı. Gelir ${money(income)}.` : "Store bugün zayıf geçti.", ...g.log].slice(0, 5),
+      log: [sold ? `Taraftar mağazası ${sold} ürün sattı. Gelir ${money(income)}.` : "Bugün taraftar mağazasında satış zayıftı.", ...g.log].slice(0, 5),
     }));
   };
 
@@ -851,11 +921,12 @@ export default function App() {
     screenNode = (
       <StoreScreen
         game={game}
-        storeItems={STORE}
+        fanStoreItems={FAN_STORE_ITEMS}
+        cashShop={CASH_SHOP}
         sponsor={sponsor}
         money={money}
-        onBuyStoreItem={buyStoreItem}
-        onSellStoreDay={sellStoreDay}
+        onBuyFanStoreStock={buyFanStoreStock}
+        onCollectFanStoreRevenue={collectFanStoreRevenue}
         onAcceptSponsor={acceptSponsor}
         onRejectSponsor={rejectSponsor}
       />
@@ -883,10 +954,7 @@ export default function App() {
       {showIntro && <IntroScreen onComplete={() => setShowIntro(false)} />}
 
       <div className="flex h-full flex-col">
-        <div className="flex-1 overflow-hidden">
-          {screenNode}
-        </div>
-
+        <div className="flex-1 overflow-hidden">{screenNode}</div>
         <BottomNav currentScreen={currentScreen} onChange={setCurrentScreen} />
       </div>
     </div>

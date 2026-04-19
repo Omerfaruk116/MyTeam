@@ -1,5 +1,24 @@
 import React, { useState } from "react";
 
+function EventBox({ event }) {
+  let boxClass = "bg-slate-950 text-slate-300";
+
+  if (event.type === "goal") boxClass = "bg-emerald-500 text-white";
+  if (event.type === "yellow") boxClass = "bg-yellow-400 text-slate-950";
+  if (event.type === "red") boxClass = "bg-rose-600 text-white";
+  if (event.type === "injury") boxClass = "bg-orange-500 text-white";
+  if (event.type === "sub") boxClass = "bg-sky-500 text-white";
+
+  return (
+    <div className={`rounded-2xl px-3 py-3 ${boxClass}`}>
+      <div className="text-sm font-semibold">
+        {event.minute}' {event.title}
+      </div>
+      <div className="mt-1 text-xs opacity-90">{event.text}</div>
+    </div>
+  );
+}
+
 export default function MatchScreen({
   game,
   lineup,
@@ -108,13 +127,8 @@ export default function MatchScreen({
             <div className="flex-1 rounded-3xl border border-slate-800 bg-[#111] p-4">
               <h2 className="mb-3 text-lg font-bold">Son Olaylar</h2>
               <div className="space-y-2">
-                {game.live.events.slice(0, 5).map((e, i) => (
-                  <div key={`${e.minute}-${i}`} className="rounded-2xl bg-slate-950 px-3 py-3">
-                    <div className="text-sm font-semibold text-white">
-                      {e.minute}' {e.title}
-                    </div>
-                    <div className="mt-1 text-xs text-slate-400">{e.text}</div>
-                  </div>
+                {game.live.events.slice(0, 6).map((e, i) => (
+                  <EventBox key={`${e.minute}-${i}`} event={e} />
                 ))}
 
                 {!game.live.events.length && (
