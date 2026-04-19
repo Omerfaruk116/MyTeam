@@ -426,7 +426,7 @@ function createLivePackage(state) {
 export default function App() {
   const [game, setGame] = useState(freshState());
   const [currentScreen, setCurrentScreen] = useState("home");
-  const [showIntro, setShowIntro] = useState(false);
+  const [showIntro, setShowIntro] = useState(true);
   const timerRef = useRef(null);
 
   useEffect(() => {
