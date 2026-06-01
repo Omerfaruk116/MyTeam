@@ -1,27 +1,48 @@
-export default function TopBar({ money = 0, premiumCash = 0 }) {
+const TopBar = ({ club }) => {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl bg-slate-900/90 p-4 shadow-lg">
-      <div className="flex flex-wrap gap-3">
-        <div className="rounded-2xl bg-amber-400 px-4 py-3 text-sm font-bold text-slate-900 shadow">
-          Para: ${money.toLocaleString()}
-        </div>
-
-        <div className="rounded-2xl bg-emerald-400 px-4 py-3 text-sm font-bold text-slate-900 shadow">
-          Nakit: {premiumCash}
-        </div>
+    <div
+      style={{
+        height: "70px",
+        background: "#0f172a",
+        borderBottom: "2px solid #1e293b",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "0 20px",
+        color: "white"
+      }}
+    >
+      <div>
+        <h2
+          style={{
+            margin: 0
+          }}
+        >
+          {club.clubName}
+        </h2>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <button className="rounded-2xl bg-slate-700 px-4 py-3 text-sm font-semibold text-white">
-          Ses
-        </button>
-        <button className="rounded-2xl bg-slate-700 px-4 py-3 text-sm font-semibold text-white">
-          Menü
-        </button>
-        <button className="rounded-2xl bg-slate-700 px-4 py-3 text-sm font-semibold text-white">
-          Kupa
-        </button>
+      <div
+        style={{
+          display: "flex",
+          gap: "25px",
+          alignItems: "center"
+        }}
+      >
+        <div>
+          💰 ${club.money.toLocaleString()}
+        </div>
+
+        <div>
+          👥 {club.fans.toLocaleString()}
+        </div>
+
+        <div>
+          ⭐ {club.prestige}
+        </div>
       </div>
     </div>
   );
-}
+};
+
+export default TopBar;
