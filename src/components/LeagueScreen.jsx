@@ -1,60 +1,43 @@
 const LeagueScreen = ({ game }) => {
-  const teams = [
-    {
-      name: game.club.clubName,
-      pts:
-        game.record.wins * 3 +
-        game.record.draws,
-      played:
-        game.record.wins +
-        game.record.draws +
-        game.record.losses
-    },
+  const teams = [...game.leagueTable].sort((a, b) => {
+    if (b.pts !== a.pts) return b.pts - a.pts;
 
-    {
-      name: "Mahalle Yıldızları",
-      pts: 14,
-      played: 6
-    },
+    const diffA = a.goalsFor - a.goalsAgainst;
+    const diffB = b.goalsFor - b.goalsAgainst;
 
-    {
-      name: "Demirspor",
-      pts: 11,
-      played: 6
-    },
+    return diffB - diffA;
+  });
 
-    {
-      name: "Şehir Gençlik",
-      pts: 9,
-      played: 6
-    },
+  const scorers = [...game.players]
+    .sort((a, b) => (b.goals || 0) - (a.goals || 0))
+    .slice(0, 10);
 
-    {
-      name: "Kuzey Gücü",
-      pts: 7,
-      played: 6
-    }
-  ].sort((a, b) => b.pts - a.pts);
+  const assists = [...game.players]
+    .sort((a, b) => (b.assists || 0) - (a.assists || 0))
+    .slice(0, 10);
 
   return (
     <div className="screen">
-      <div className="panel">
-        <h2>🏆 {game.league.name}</h2>
-
-        <p>
-          Sezon {game.season}
-        </p>
+      <div className="hero-panel">
+        <div>
+          <p className="small-title">LİG MERKEZİ</p>
+          <h1>🏆 {game.league.name}</h1>
+          <p>
+            Sezon {game.season} • Hafta {game.week}
+          </p>
+        </div>
       </div>
 
       <div
         className="panel"
-        style={{
-          marginTop: "14px"
-        }}
+        style={{ marginTop: "14px" }}
       >
+        <h2>📊 Puan Durumu</h2>
+
         <table
           style={{
-            width: "100%"
+            width: "100%",
+            borderCollapse: "collapse"
           }}
         >
           <thead>
@@ -62,71 +45,109 @@ const LeagueScreen = ({ game }) => {
               <th>#</th>
               <th>Takım</th>
               <th>O</th>
+              <th>G</th>
+              <th>B</th>
+              <th>M</th>
+              <th>AV</th>
               <th>P</th>
             </tr>
           </thead>
 
           <tbody>
-            {teams.map(
-              (team, index) => (
-                <tr key={team.name}>
-                  <td>{index + 1}</td>
-
-                  <td>
-                    {team.name}
-                  </td>
-
-                  <td>
-                    {team.played}
-                  </td>
-
-                  <td>
-                    {team.pts}
-                  </td>
-                </tr>
-              )
-            )}
+            {teams.map((team, index) => (
+              <tr
+                key={team.id}
+                style={{
+                  background: team.isUser
+                    ? "rgba(34,197,94,0.18)"
+                    : "transparent"
+                }}
+              >
+                <td>{index + 1}</td>
+                <td>{team.name}</td>
+                <td>{team.played}</td>
+                <td>{team.wins}</td>
+                <td>{team.draws}</td>
+                <td>{team.losses}</td>
+                <td>
+                  {team.goalsFor - team.goalsAgainst}
+                </td>
+                <td>
+                  <strong>{team.pts}</strong>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
 
       <div
-        className="panel"
         style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "14px",
           marginTop: "14px"
         }}
       >
-        <h2>📈 Kulüp İstatistikleri</h2>
+        <div className="panel">
+          <h2>⚽ Gol Krallığı</h2>
 
-        <p>
-          ✅ Galibiyet:
-          {" "}
-          {game.record.wins}
-        </p>
+          {scorers.map((player, index) => (
+            <div
+              key={player.id}
+              className="mini-player"
+            >
+              <span>
+                {index + 1}. {player.name}
+              </span>
 
-        <p>
-          🤝 Beraberlik:
-          {" "}
-          {game.record.draws}
-        </p>
+              <strong>
+                {player.goals || 0} Gol
+              </strong>
+            </div>
+          ))}
+        </div>
 
-        <p>
-          ❌ Mağlubiyet:
-          {" "}
-          {game.record.losses}
-        </p>
+        <div className="panel">
+          <h2>🎯 Asist Krallığı</h2>
 
-        <p>
-          ⚽ Atılan Gol:
-          {" "}
-          {game.record.goalsScored}
-        </p>
+          {assists.map((player, index) => (
+            <div
+              key={player.id}
+              className="mini-player"
+            >
+              <span>
+                {index + 1}. {player.name}
+              </span>
 
-        <p>
-          🥅 Yenilen Gol:
-          {" "}
-          {game.record.goalsConceded}
-        </p>
+              <strong>
+                {player.assists || 0} Asist
+              </strong>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div
+        className="panel"
+        style={{ marginTop: "14px" }}
+      >
+        <h2>📅 Fikstür</h2>
+
+        {game.fixtures.map((fixture) => (
+          <div
+            key={fixture.week}
+            className="mini-player"
+          >
+            <span>
+              Hafta {fixture.week}
+            </span>
+
+            <strong>
+              {fixture.home} vs {fixture.away}
+            </strong>
+          </div>
+        ))}
       </div>
     </div>
   );

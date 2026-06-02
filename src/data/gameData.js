@@ -8,12 +8,7 @@ export const rarityColors = {
   mvp: "#ef4444"
 };
 
-export const formations = [
-  "4-4-2",
-  "4-3-3",
-  "4-2-3-1",
-  "3-5-2"
-];
+export const formations = ["4-4-2", "4-3-3", "4-2-3-1", "3-5-2"];
 
 export const leagues = [
   { level: 1, name: "Mahalle Ligi", minPower: 20, maxPower: 35, prize: 75000 },
@@ -33,14 +28,39 @@ export const defaultTrophies = [
   { id: "youth", name: "Altyapı Başarısı", count: 0, icon: "🌟" }
 ];
 
+const createLeagueTable = (clubName) => [
+  { id: 1, name: clubName, played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, pts: 0, power: 28, isUser: true },
+  { id: 2, name: "Mahalle Yıldızları", played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, pts: 0, power: 30 },
+  { id: 3, name: "Demirspor", played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, pts: 0, power: 29 },
+  { id: 4, name: "Kuzey Gücü", played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, pts: 0, power: 27 },
+  { id: 5, name: "Şehir Gençlik", played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, pts: 0, power: 26 },
+  { id: 6, name: "Mavi Ateş", played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, pts: 0, power: 25 },
+  { id: 7, name: "Kara Şahinler", played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, pts: 0, power: 24 },
+  { id: 8, name: "Altınordu FK", played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, pts: 0, power: 23 },
+  { id: 9, name: "Anadolu Kartalları", played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, pts: 0, power: 22 },
+  { id: 10, name: "Semt Gücü", played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, pts: 0, power: 21 }
+];
+
+const createFixtures = (teams) => {
+  const opponents = teams.filter((team) => !team.isUser);
+
+  return opponents.map((team, index) => ({
+    week: index + 1,
+    home: teams[0].name,
+    away: team.name,
+    played: false
+  }));
+};
+
 export const createNewGame = () => {
   const league = leagues[0];
-
   const players = generateSquad(22, league.level);
+  const clubName = "EL TURCO FC";
+  const leagueTable = createLeagueTable(clubName);
 
   return {
     club: {
-      clubName: "EL TURCO FC",
+      clubName,
       managerName: "EL TURCO",
       money: 120000,
       fans: 180,
@@ -52,16 +72,13 @@ export const createNewGame = () => {
     },
 
     league,
+    leagueTable,
+    fixtures: createFixtures(leagueTable),
 
     formation: "4-3-3",
 
-    startingXI: players.slice(0, 11).map(
-      (player) => player.id
-    ),
-
-    bench: players.slice(11, 18).map(
-      (player) => player.id
-    ),
+    startingXI: players.slice(0, 11).map((player) => player.id),
+    bench: players.slice(11, 18).map((player) => player.id),
 
     season: 1,
     week: 1,
@@ -75,22 +92,14 @@ export const createNewGame = () => {
     },
 
     players,
-
-    youthPlayers: generateYouthPlayers(
-      5,
-      league.level
-    ),
+    youthPlayers: generateYouthPlayers(5, league.level),
 
     trophies: defaultTrophies,
-
     history: [
       "EL TURCO FC kuruldu. Hedef: mahalle sahasından dünya devliğine yükselmek."
     ],
-
     achievements: [],
-
     weeklyBestXI: [],
-
     lastMessages: [
       "Taraftarlar yeni sezonu bekliyor.",
       "Kulüp düşük bütçeyle yola çıktı.",
