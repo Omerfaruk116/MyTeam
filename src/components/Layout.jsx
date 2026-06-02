@@ -1,36 +1,18 @@
 import TopBar from "./TopBar";
 import BottomNav from "./BottomNav";
 
-const Layout = ({
-  club,
-  currentScreen,
-  setCurrentScreen,
-  children
-}) => {
+const Layout = ({ game, screen, setScreen, children }) => {
   return (
-    <div
-      style={{
-        height: "100vh",
-        background: "#020617",
-        display: "flex",
-        flexDirection: "column"
-      }}
-    >
-      <TopBar club={club} />
+    <div className="app-shell">
+      <TopBar game={game} />
 
-      <div
-        style={{
-          flex: 1,
-          overflowY: "auto"
-        }}
-      >
-        {children}
+      <div className="game-area">
+        <BottomNav screen={screen} setScreen={setScreen} />
+
+        <main className="main-content">
+          {children}
+        </main>
       </div>
-
-      <BottomNav
-        currentScreen={currentScreen}
-        setCurrentScreen={setCurrentScreen}
-      />
     </div>
   );
 };

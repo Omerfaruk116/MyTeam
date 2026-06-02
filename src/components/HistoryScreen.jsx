@@ -1,57 +1,42 @@
-const HistoryScreen = ({ club }) => {
+const HistoryScreen = ({ game }) => {
+  const history = game.history || [];
+
   return (
-    <div
-      style={{
-        padding: "20px",
-        color: "white"
-      }}
-    >
-      <h1>Kulüp Tarihi</h1>
+    <div className="screen">
+      <div className="hero-panel">
+        <div>
+          <p className="small-title">
+            KULÜP TARİHİ
+          </p>
 
-      <div
-        style={{
-          marginTop: "20px",
-          background: "#1e293b",
-          borderRadius: "16px",
-          padding: "25px"
-        }}
-      >
-        <h2>{club.clubName}</h2>
+          <h1>📖 Kulüp Geçmişi</h1>
 
-        <p>📅 Kuruluş Sezonu: 1</p>
-
-        <p>🏆 Toplam Kupa: {club.trophies}</p>
-
-        <p>⚽ Toplam Gol: {club.goalsScored}</p>
-
-        <p>🥅 Yenilen Gol: {club.goalsConceded}</p>
-
-        <p>✅ Galibiyet: {club.wins}</p>
-
-        <p>🤝 Beraberlik: {club.draws}</p>
-
-        <p>❌ Mağlubiyet: {club.losses}</p>
-
-        <p>⭐ Prestij: {club.prestige}</p>
-
-        <p>👥 Taraftar: {club.fans.toLocaleString()}</p>
+          <p>
+            Kulübünde yaşanan tüm önemli olaylar.
+          </p>
+        </div>
       </div>
 
       <div
+        className="panel"
         style={{
-          marginTop: "20px",
-          background: "#1e293b",
-          borderRadius: "16px",
-          padding: "20px"
+          marginTop: "14px"
         }}
       >
-        <h3>Kulüp Efsanesi</h3>
-
-        <p>
-          Bu bölüm ileride kulübün en golcü oyuncuları,
-          en büyük transferleri ve en önemli başarılarını
-          gösterecek.
-        </p>
+        {history.length === 0 ? (
+          <p>
+            Henüz kulüp geçmişi oluşmadı.
+          </p>
+        ) : (
+          history.map((item, index) => (
+            <div
+              key={index}
+              className="news-line"
+            >
+              {item}
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

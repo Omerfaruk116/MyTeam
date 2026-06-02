@@ -1,68 +1,104 @@
 import { sponsors } from "../data/sponsors";
 
-const SponsorScreen = ({ club }) => {
+const SponsorScreen = ({
+  game,
+  onSignSponsor
+}) => {
   return (
-    <div
-      style={{
-        padding: "20px",
-        color: "white"
-      }}
-    >
-      <h1>Sponsorlar</h1>
+    <div className="screen">
+      <div className="hero-panel">
+        <div>
+          <p className="small-title">
+            SPONSORLAR
+          </p>
+
+          <h1>🤝 Sponsorluklar</h1>
+
+          <p>
+            Kulübünü büyütmek için
+            sponsor anlaşmaları yap.
+          </p>
+        </div>
+      </div>
 
       <div
+        className="player-grid"
         style={{
-          marginTop: "20px"
+          marginTop: "14px"
         }}
       >
         {sponsors.map((sponsor) => {
           const available =
-            club.prestige >= sponsor.prestigeRequired;
+            game.club.prestige >=
+              sponsor.prestigeRequired &&
+            game.club.fans >=
+              sponsor.fansRequired &&
+            game.club.stadiumLevel >=
+              sponsor.stadiumRequired;
 
           return (
             <div
               key={sponsor.id}
-              style={{
-                background: "#1e293b",
-                padding: "20px",
-                borderRadius: "16px",
-                marginBottom: "15px",
-                border: available
-                  ? "2px solid #22c55e"
-                  : "2px solid #475569"
-              }}
+              className="player-card"
             >
-              <h2>{sponsor.name}</h2>
+              <h3>{sponsor.name}</h3>
 
               <p>
-                💰 Haftalık Gelir: $
+                💰 Haftalık:
+                {" "}
+                $
                 {sponsor.weeklyIncome.toLocaleString()}
               </p>
 
               <p>
-                ⭐ Gerekli Prestij:
+                ⭐ Prestij:
                 {" "}
                 {sponsor.prestigeRequired}
               </p>
 
+              <p>
+                👥 Taraftar:
+                {" "}
+                {sponsor.fansRequired.toLocaleString()}
+              </p>
+
+              <p>
+                🏟️ Stadyum:
+                {" "}
+                {sponsor.stadiumRequired}
+              </p>
+
+              <p>
+                🎯 Görev:
+                {" "}
+                {sponsor.bonusGoal}
+              </p>
+
+              <p>
+                🎁 Bonus:
+                {" "}
+                $
+                {sponsor.bonusReward.toLocaleString()}
+              </p>
+
               <button
+                className={
+                  available
+                    ? "primary-btn"
+                    : "secondary-btn"
+                }
                 disabled={!available}
                 style={{
-                  marginTop: "10px",
-                  padding: "10px 16px",
-                  borderRadius: "10px",
-                  border: "none",
-                  cursor: available
-                    ? "pointer"
-                    : "not-allowed",
-                  background: available
-                    ? "#22c55e"
-                    : "#475569",
-                  color: "white",
-                  fontWeight: "bold"
+                  width: "100%",
+                  marginTop: "12px"
                 }}
+                onClick={() =>
+                  onSignSponsor(sponsor)
+                }
               >
-                Anlaşma Yap
+                {available
+                  ? "Anlaşma Yap"
+                  : "Şartlar Sağlanmadı"}
               </button>
             </div>
           );

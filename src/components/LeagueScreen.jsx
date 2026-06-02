@@ -1,60 +1,132 @@
-const LeagueScreen = () => {
+const LeagueScreen = ({ game }) => {
   const teams = [
-    { name: "EL TURCO FC", pts: 12, played: 5 },
-    { name: "Blue Lions", pts: 10, played: 5 },
-    { name: "Red Eagles", pts: 9, played: 5 },
-    { name: "Golden Stars", pts: 7, played: 5 },
-    { name: "Black Wolves", pts: 4, played: 5 }
-  ];
+    {
+      name: game.club.clubName,
+      pts:
+        game.record.wins * 3 +
+        game.record.draws,
+      played:
+        game.record.wins +
+        game.record.draws +
+        game.record.losses
+    },
+
+    {
+      name: "Mahalle Yıldızları",
+      pts: 14,
+      played: 6
+    },
+
+    {
+      name: "Demirspor",
+      pts: 11,
+      played: 6
+    },
+
+    {
+      name: "Şehir Gençlik",
+      pts: 9,
+      played: 6
+    },
+
+    {
+      name: "Kuzey Gücü",
+      pts: 7,
+      played: 6
+    }
+  ].sort((a, b) => b.pts - a.pts);
 
   return (
-    <div
-      style={{
-        padding: "20px",
-        color: "white"
-      }}
-    >
-      <h1>Lig Tablosu</h1>
+    <div className="screen">
+      <div className="panel">
+        <h2>🏆 {game.league.name}</h2>
+
+        <p>
+          Sezon {game.season}
+        </p>
+      </div>
 
       <div
+        className="panel"
         style={{
-          background: "#1e293b",
-          borderRadius: "20px",
-          marginTop: "20px",
-          overflow: "hidden"
+          marginTop: "14px"
         }}
       >
-        <div
+        <table
           style={{
-            display: "grid",
-            gridTemplateColumns: "60px 1fr 80px 80px",
-            padding: "15px",
-            background: "#334155",
-            fontWeight: "bold"
+            width: "100%"
           }}
         >
-          <div>#</div>
-          <div>Takım</div>
-          <div>O</div>
-          <div>P</div>
-        </div>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Takım</th>
+              <th>O</th>
+              <th>P</th>
+            </tr>
+          </thead>
 
-        {teams.map((team, index) => (
-          <div
-            key={team.name}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "60px 1fr 80px 80px",
-              padding: "15px",
-              borderBottom: "1px solid #334155"
-            }}
-          >
-            <div>{index + 1}</div>
-            <div>{team.name}</div>
-            <div>{team.played}</div>
-            <div>{team.pts}</div>
-          </div>
-        ))}
+          <tbody>
+            {teams.map(
+              (team, index) => (
+                <tr key={team.name}>
+                  <td>{index + 1}</td>
+
+                  <td>
+                    {team.name}
+                  </td>
+
+                  <td>
+                    {team.played}
+                  </td>
+
+                  <td>
+                    {team.pts}
+                  </td>
+                </tr>
+              )
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div
+        className="panel"
+        style={{
+          marginTop: "14px"
+        }}
+      >
+        <h2>📈 Kulüp İstatistikleri</h2>
+
+        <p>
+          ✅ Galibiyet:
+          {" "}
+          {game.record.wins}
+        </p>
+
+        <p>
+          🤝 Beraberlik:
+          {" "}
+          {game.record.draws}
+        </p>
+
+        <p>
+          ❌ Mağlubiyet:
+          {" "}
+          {game.record.losses}
+        </p>
+
+        <p>
+          ⚽ Atılan Gol:
+          {" "}
+          {game.record.goalsScored}
+        </p>
+
+        <p>
+          🥅 Yenilen Gol:
+          {" "}
+          {game.record.goalsConceded}
+        </p>
       </div>
     </div>
   );

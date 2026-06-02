@@ -1,41 +1,63 @@
-const SettingsScreen = () => {
+const SettingsScreen = ({
+  onResetGame
+}) => {
+  const handleReset = () => {
+    const confirmed = window.confirm(
+      "Tüm kariyer silinsin mi?"
+    );
+
+    if (confirmed) {
+      onResetGame();
+    }
+  };
+
   return (
-    <div
-      style={{
-        padding: "20px",
-        color: "white"
-      }}
-    >
-      <h1>Ayarlar</h1>
+    <div className="screen">
+      <div className="hero-panel">
+        <div>
+          <p className="small-title">
+            AYARLAR
+          </p>
 
-      <div
-        style={{
-          marginTop: "20px",
-          background: "#1e293b",
-          borderRadius: "16px",
-          padding: "20px"
-        }}
-      >
-        <h3>🎮 Oyun Ayarları</h3>
+          <h1>⚙️ Oyun Ayarları</h1>
 
-        <p>🔊 Ses: Açık</p>
-        <p>🎵 Müzik: Açık</p>
-        <p>🌍 Dil: Türkçe</p>
+          <p>
+            Kariyer ve kayıt işlemleri.
+          </p>
+        </div>
       </div>
 
       <div
+        className="panel"
         style={{
-          marginTop: "20px",
-          background: "#1e293b",
-          borderRadius: "16px",
-          padding: "20px"
+          marginTop: "14px"
         }}
       >
-        <h3>ℹ️ Bilgiler</h3>
+        <h2>💾 Kayıt Sistemi</h2>
 
-        <p>Oyun: EL TURCO Football Manager</p>
-        <p>Sürüm: 1.0</p>
-        <p>Geliştirici: L.M. PRODUCTION</p>
+        <p>
+          Oyun otomatik olarak kaydedilir.
+        </p>
+
+        <p>
+          Tarayıcı kapansa bile kariyer devam eder.
+        </p>
+      </div>
+
+      <div
+        className="panel"
+        style={{
+          marginTop: "14px"
+        }}
+      >
+        <h2>🚨 Tehlikeli İşlemler</h2>
+
+        <button
+          className="danger-btn"
+          onClick={handleReset}
+        >
+          Kariyeri Sıfırla
+        </button>
       </div>
     </div>
   );

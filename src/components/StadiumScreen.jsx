@@ -1,43 +1,150 @@
 import { stadiumLevels } from "../data/stadiums";
 
-const StadiumScreen = ({ club }) => {
-  const currentStadium =
-    stadiumLevels.find((stadium) => stadium.level === club.stadiumLevel) ||
-    stadiumLevels[0];
+const StadiumScreen = ({
+  game,
+  onUpgradeStadium,
+  updateGame
+}) => {
+  const stadium =
+    stadiumLevels.find(
+      (item) =>
+        item.level === game.club.stadiumLevel
+    ) || stadiumLevels[0];
+
+  const changeTicketPrice = (value) => {
+    updateGame({
+      ...game,
+      club: {
+        ...game.club,
+        ticketPrice: Number(value)
+      }
+    });
+  };
 
   return (
-    <div style={{ padding: "20px", color: "white" }}>
-      <h1>Stadyum</h1>
+    <div className="screen">
+      <div className="panel">
+        <h2>🏟️ {stadium.name}</h2>
 
-      <div
-        style={{
-          marginTop: "20px",
-          background: "linear-gradient(135deg, #064e3b, #0f172a)",
-          borderRadius: "24px",
-          padding: "30px",
-          border: "2px solid #22c55e"
-        }}
-      >
-        <h2>{currentStadium.name}</h2>
-
-        <p>🏟️ Seviye: {currentStadium.level}</p>
-        <p>👥 Kapasite: {currentStadium.capacity.toLocaleString()}</p>
-        <p>💰 Maç Geliri: ${currentStadium.income.toLocaleString()}</p>
-        <p>⭐ Prestij Katkısı: {currentStadium.prestige}</p>
-
-        <button
+        <div
+          className="stadium-visual"
           style={{
-            marginTop: "20px",
-            background: "#f59e0b",
-            color: "black",
-            border: "none",
-            padding: "12px 20px",
-            borderRadius: "12px",
-            fontWeight: "bold",
-            cursor: "pointer"
+            marginTop: "14px"
           }}
         >
-          Geliştir
+          <div className="stadium-field" />
+        </div>
+      </div>
+
+      <div
+        className="stat-grid"
+        style={{
+          marginTop: "14px"
+        }}
+      >
+        <div className="stat-card">
+          <span>👥 Kapasite</span>
+          <strong>
+            {stadium.capacity.toLocaleString()}
+          </strong>
+        </div>
+
+        <div className="stat-card">
+          <span>🔥 Atmosfer</span>
+          <strong>
+            {stadium.atmosphere}
+          </strong>
+        </div>
+
+        <div className="stat-card">
+          <span>⭐ Prestij</span>
+          <strong>
+            {stadium.prestige}
+          </strong>
+        </div>
+
+        <div className="stat-card">
+          <span>🏠 Ev Sahibi Bonusu</span>
+          <strong>
+            +{stadium.homeBonus}
+          </strong>
+        </div>
+      </div>
+
+      <div
+        className="panel"
+        style={{
+          marginTop: "14px"
+        }}
+      >
+        <h2>🎟️ Bilet Sistemi</h2>
+
+        <p>
+          Önerilen Fiyat:
+          {" "}
+          $
+          {stadium.recommendedTicketPrice}
+        </p>
+
+        <input
+          type="range"
+          min="1"
+          max="250"
+          value={game.club.ticketPrice}
+          onChange={(e) =>
+            changeTicketPrice(
+              e.target.value
+            )
+          }
+          style={{
+            width: "100%",
+            marginTop: "12px"
+          }}
+        />
+
+        <p
+          style={{
+            marginTop: "10px"
+          }}
+        >
+          Mevcut Bilet Fiyatı:
+          {" "}
+          $
+          {game.club.ticketPrice}
+        </p>
+
+        <p>
+          Çok yükseltirsen taraftar azalır.
+        </p>
+
+        <p>
+          Çok düşürürsen stadyum dolar.
+        </p>
+      </div>
+
+      <div
+        className="panel"
+        style={{
+          marginTop: "14px"
+        }}
+      >
+        <h2>🏗️ Stadyum Geliştirme</h2>
+
+        <p>
+          Sonraki yükseltme:
+          {" "}
+          $
+          {stadium.upgradeCost.toLocaleString()}
+        </p>
+
+        <button
+          className="primary-btn"
+          onClick={onUpgradeStadium}
+          style={{
+            marginTop: "12px"
+          }}
+        >
+          Stadyumu Geliştir
         </button>
       </div>
     </div>

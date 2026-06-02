@@ -1,59 +1,86 @@
+import { useMemo, useState } from "react";
 import PlayerCard from "./PlayerCard";
 
-const TransferScreen = ({ transferMarket = [] }) => {
+const TransferScreen = ({
+  transferMarket,
+  onBuyPlayer
+}) => {
+  const [position, setPosition] = useState("ALL");
+  const [minimumRating, setMinimumRating] =
+    useState(0);
+
+  const filteredPlayers = useMemo(() => {
+    return transferMarket.filter((player) => {
+      const positionMatch =
+        position === "ALL"
+          ? true
+          : player.position === position;
+
+      const ratingMatch =
+        player.rating >= minimumRating;
+
+      return positionMatch && ratingMatch;
+    });
+  }, [
+    transferMarket,
+    position,
+    minimumRating
+  ]);
+
   return (
-    <div
-      style={{
-        padding: "20px",
-        color: "white"
-      }}
-    >
-      <h1>Transfer Pazarı</h1>
+    <div className="screen">
+      <div className="panel">
+        <h2>💰 Transfer Pazarı</h2>
+
+        <div className="filter-bar">
+          <select
+            value={position}
+            onChange={(e) =>
+              setPosition(e.target.value)
+            }
+          >
+            <option value="ALL">
+              Tüm Mevkiler
+            </option>
+
+            <option value="GK">GK</option>
+            <option value="LB">LB</option>
+            <option value="CB">CB</option>
+            <option value="RB">RB</option>
+            <option value="CDM">CDM</option>
+            <option value="CM">CM</option>
+            <option value="CAM">CAM</option>
+            <option value="LW">LW</option>
+            <option value="RW">RW</option>
+            <option value="ST">ST</option>
+          </select>
+
+          <input
+            type="number"
+            placeholder="Min Güç"
+            value={minimumRating}
+            onChange={(e) =>
+              setMinimumRating(
+                Number(e.target.value)
+              )
+            }
+          />
+        </div>
+      </div>
 
       <div
+        className="transfer-grid"
         style={{
-          marginTop: "20px"
+          marginTop: "14px"
         }}
       >
-        {transferMarket.map((player) => (
-          <div
+        {filteredPlayers.map((player) => (
+          <PlayerCard
             key={player.id}
-            style={{
-              marginBottom: "15px"
-            }}
-          >
-            <PlayerCard player={player} />
-
-            <div
-              style={{
-                background: "#1e293b",
-                padding: "10px",
-                borderRadius: "12px",
-                marginTop: "5px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center"
-              }}
-            >
-              <span>
-                💰 ${player.value.toLocaleString()}
-              </span>
-
-              <button
-                style={{
-                  background: "#22c55e",
-                  color: "white",
-                  border: "none",
-                  padding: "10px 16px",
-                  borderRadius: "10px",
-                  cursor: "pointer",
-                  fontWeight: "bold"
-                }}
-              >
-                Satın Al
-              </button>
-            </div>
-          </div>
+            player={player}
+            showBuyButton
+            onBuy={onBuyPlayer}
+          />
         ))}
       </div>
     </div>

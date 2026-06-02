@@ -1,26 +1,30 @@
-const SAVE_KEY = "elTurcoFootballManagerSave";
+const SAVE_KEY = "el_turco_football_manager_v2";
 
-export const saveGame = (gameState) => {
+export const saveGame = (game) => {
   try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
+    localStorage.setItem(
+      SAVE_KEY,
+      JSON.stringify(game)
+    );
+
     return true;
   } catch (error) {
-    console.error("Kayıt hatası:", error);
+    console.error(error);
     return false;
   }
 };
 
 export const loadGame = () => {
   try {
-    const savedData = localStorage.getItem(SAVE_KEY);
+    const data = localStorage.getItem(SAVE_KEY);
 
-    if (!savedData) {
+    if (!data) {
       return null;
     }
 
-    return JSON.parse(savedData);
+    return JSON.parse(data);
   } catch (error) {
-    console.error("Kayıt yükleme hatası:", error);
+    console.error(error);
     return null;
   }
 };
@@ -30,7 +34,7 @@ export const deleteSave = () => {
     localStorage.removeItem(SAVE_KEY);
     return true;
   } catch (error) {
-    console.error("Kayıt silme hatası:", error);
+    console.error(error);
     return false;
   }
 };

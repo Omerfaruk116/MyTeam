@@ -1,88 +1,127 @@
 const MatchScreen = ({
-  homeGoals = 0,
-  awayGoals = 0,
-  events = []
+  game,
+  lastMatch,
+  onPlayMatch
 }) => {
+  const formPlayers = [...game.players]
+    .sort((a, b) => b.form - a.form)
+    .slice(0, 5);
+
   return (
-    <div
-      style={{
-        padding: "20px",
-        color: "white"
-      }}
-    >
-      <h1>Maç Merkezi</h1>
+    <div className="screen">
+      <div className="hero-panel">
+        <div>
+          <p className="small-title">
+            MAÇ MERKEZİ
+          </p>
 
-      <div
-        style={{
-          background: "#1e293b",
-          borderRadius: "20px",
-          padding: "25px",
-          marginTop: "20px",
-          textAlign: "center"
-        }}
-      >
-        <h2
-          style={{
-            fontSize: "42px",
-            margin: 0
-          }}
-        >
-          {homeGoals} - {awayGoals}
-        </h2>
+          <h1>{game.league.name}</h1>
 
-        <p
-          style={{
-            color: "#94a3b8",
-            marginTop: "10px"
-          }}
+          <p>
+            Hazır olduğunda maçı başlat.
+          </p>
+        </div>
+
+        <button
+          className="primary-btn"
+          onClick={onPlayMatch}
         >
-          Canlı Maç Sonucu
-        </p>
+          ⚽ Maça Başla
+        </button>
       </div>
 
       <div
+        className="dashboard-grid"
         style={{
-          marginTop: "25px",
-          background: "#1e293b",
-          borderRadius: "20px",
-          padding: "20px",
-          maxHeight: "500px",
-          overflowY: "auto"
+          marginTop: "14px"
         }}
       >
-        <h2>Maç Olayları</h2>
+        <div className="panel">
+          <h2>🔥 Kendini İyi Hissedenler</h2>
 
-        {events.length === 0 ? (
-          <p
-            style={{
-              color: "#94a3b8"
-            }}
-          >
-            Henüz olay bulunmuyor.
-          </p>
-        ) : (
-          events.map((event, index) => (
+          {formPlayers.map((player) => (
             <div
-              key={index}
-              style={{
-                padding: "10px",
-                marginBottom: "10px",
-                borderRadius: "10px",
-                background: "#334155"
-              }}
+              key={player.id}
+              className="mini-player"
             >
-              <strong>{event.minute}'</strong> — {event.player}
-              <br />
-              <span
-                style={{
-                  color: "#cbd5e1"
-                }}
-              >
-                {event.text}
-              </span>
+              <span>{player.name}</span>
+
+              <strong>
+                {player.rating}
+              </strong>
+
+              <small>
+                Form {player.form}
+              </small>
             </div>
-          ))
-        )}
+          ))}
+        </div>
+
+        <div className="panel">
+          <h2>📊 Son Maç</h2>
+
+          {!lastMatch && (
+            <p>
+              Henüz maç oynanmadı.
+            </p>
+          )}
+
+          {lastMatch && (
+            <>
+              <p>
+                Rakip:
+                {" "}
+                {lastMatch.opponent.name}
+              </p>
+
+              <p>
+                Skor:
+                {" "}
+                {lastMatch.homeGoals}
+                {" - "}
+                {lastMatch.awayGoals}
+              </p>
+
+              <p>
+                Taraftar:
+                {" "}
+                {lastMatch.attendance.toLocaleString()}
+              </p>
+
+              <p>
+                Gelir:
+                {" "}
+                $
+                {lastMatch.income.toLocaleString()}
+              </p>
+            </>
+          )}
+        </div>
+
+        <div className="panel wide-panel">
+          <h2>📰 Maç Olayları</h2>
+
+          {!lastMatch && (
+            <p>
+              Maç oynandığında olaylar burada
+              görünecek.
+            </p>
+          )}
+
+          {lastMatch &&
+            lastMatch.events.map(
+              (event, index) => (
+                <div
+                  key={index}
+                  className="news-line"
+                >
+                  {event.minute}'
+                  {" "}
+                  {event.text}
+                </div>
+              )
+            )}
+        </div>
       </div>
     </div>
   );

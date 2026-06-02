@@ -1,24 +1,32 @@
 import PlayerCard from "./PlayerCard";
 
-const TeamScreen = ({ players }) => {
+const TeamScreen = ({ game, onSellPlayer }) => {
   return (
-    <div
-      style={{
-        padding: "20px",
-        color: "white"
-      }}
-    >
-      <h1>Kadro</h1>
+    <div className="screen">
+      <div className="panel">
+        <h2>👥 A Takım Kadrosu</h2>
+
+        <div
+          style={{
+            marginTop: "10px"
+          }}
+        >
+          Toplam Oyuncu: {game.players.length}
+        </div>
+      </div>
 
       <div
+        className="player-grid"
         style={{
-          marginTop: "20px"
+          marginTop: "14px"
         }}
       >
-        {players.map((player) => (
+        {game.players.map((player) => (
           <PlayerCard
             key={player.id}
             player={player}
+            showSellButton
+            onSell={onSellPlayer}
           />
         ))}
       </div>

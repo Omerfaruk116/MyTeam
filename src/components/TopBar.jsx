@@ -1,47 +1,20 @@
-const TopBar = ({ club }) => {
+const TopBar = ({ game }) => {
+  const club = game.club;
+
   return (
-    <div
-      style={{
-        height: "70px",
-        background: "#0f172a",
-        borderBottom: "2px solid #1e293b",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "0 20px",
-        color: "white"
-      }}
-    >
-      <div>
-        <h2
-          style={{
-            margin: 0
-          }}
-        >
-          {club.clubName}
-        </h2>
+    <header className="top-bar">
+      <div className="top-brand">
+        <h2>{club.clubName}</h2>
+        <small>{game.league.name}</small>
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          gap: "25px",
-          alignItems: "center"
-        }}
-      >
-        <div>
-          💰 ${club.money.toLocaleString()}
-        </div>
-
-        <div>
-          👥 {club.fans.toLocaleString()}
-        </div>
-
-        <div>
-          ⭐ {club.prestige}
-        </div>
+      <div className="top-stats">
+        <div>💰 ${club.money.toLocaleString()}</div>
+        <div>👥 {club.fans.toLocaleString()}</div>
+        <div>⭐ {club.prestige}</div>
+        <div>📅 S{game.season} / H{game.week}</div>
       </div>
-    </div>
+    </header>
   );
 };
 

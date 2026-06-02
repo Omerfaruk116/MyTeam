@@ -1,52 +1,34 @@
-const BottomNav = ({ currentScreen, setCurrentScreen }) => {
-  const menuItems = [
-    "Ana Sayfa",
-    "Takım",
-    "Diziliş",
-    "Maç",
-    "Lig",
-    "Transfer",
-    "Stadyum"
-  ];
+const menuItems = [
+  { key: "home", label: "🏠 Ana Sayfa" },
+  { key: "team", label: "👥 Kadro" },
+  { key: "formation", label: "⚽ Diziliş" },
+  { key: "match", label: "🎮 Maç Merkezi" },
+  { key: "league", label: "🏆 Lig" },
+  { key: "weekly", label: "⭐ Haftanın 11'i" },
+  { key: "transfer", label: "💰 Transfer" },
+  { key: "stadium", label: "🏟️ Stadyum" },
+  { key: "sponsor", label: "🤝 Sponsor" },
+  { key: "youth", label: "🌱 Altyapı" },
+  { key: "history", label: "📖 Tarih" },
+  { key: "achievements", label: "🏅 Başarılar" },
+  { key: "settings", label: "⚙️ Ayarlar" }
+];
 
+const BottomNav = ({ screen, setScreen }) => {
   return (
-    <div
-      style={{
-        height: "80px",
-        background: "#0f172a",
-        borderTop: "2px solid #1e293b",
-        display: "flex",
-        justifyContent: "space-around",
-        alignItems: "center"
-      }}
-    >
+    <aside className="side-nav">
       {menuItems.map((item) => (
         <button
-          key={item}
-          onClick={() => setCurrentScreen(item)}
-          style={{
-            background:
-              currentScreen === item
-                ? "#22c55e"
-                : "#1e293b",
-
-            color: "white",
-
-            border: "none",
-
-            padding: "10px 14px",
-
-            borderRadius: "10px",
-
-            cursor: "pointer",
-
-            fontWeight: "bold"
-          }}
+          key={item.key}
+          className={`nav-btn ${
+            screen === item.key ? "active" : ""
+          }`}
+          onClick={() => setScreen(item.key)}
         >
-          {item}
+          {item.label}
         </button>
       ))}
-    </div>
+    </aside>
   );
 };
 
